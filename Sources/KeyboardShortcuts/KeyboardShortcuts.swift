@@ -21,16 +21,39 @@ public enum KeyboardShortcuts {
 	*/
 	static var isPaused = false
 
-	private static func register(_ shortcut: Shortcut) {
+	public enum Scope: Hashable {
+		case global, local
+	}
+
+	private static func register(_ shortcut: Shortcut, scope: Scope) {
 		guard !registeredShortcuts.contains(shortcut) else {
 			return
 		}
 
-		CarbonKeyboardShortcuts.register(
-			shortcut,
-			onKeyDown: handleOnKeyDown,
-			onKeyUp: handleOnKeyUp
-		)
+		switch scope {
+		case .global:
+			CarbonKeyboardShortcuts.register(
+				shortcut,
+				onKeyDown: handleOnKeyDown,
+				onKeyUp: handleOnKeyUp
+			)
+		case .local:
+			NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+				if event.keyCode == shortcut.carbonKeyCode {
+					handleOnKeyDown(shortcut)
+					return nil
+				}
+				return event
+			}
+
+			NSEvent.addLocalMonitorForEvents(matching: .keyUp) { event in
+				if event.keyCode == shortcut.carbonKeyCode {
+					handleOnKeyUp(shortcut)
+					return nil
+				}
+				return event
+			}
+		}
 
 		registeredShortcuts.insert(shortcut)
 	}
@@ -76,12 +99,12 @@ public enum KeyboardShortcuts {
 	/**
 	Enable a disabled keyboard shortcut.
 	*/
-	public static func enable(_ name: Name) {
+	public static func enable(_ name: Name, scope: Scope) {
 		guard let shortcut = getShortcut(for: name) else {
 			return
 		}
 
-		register(shortcut)
+		register(shortcut, scope: scope)
 	}
 
 	/**
@@ -108,8 +131,8 @@ public enum KeyboardShortcuts {
 	}
 	```
 	*/
-	public static func reset(_ names: Name...) {
-		reset(names)
+	public static func reset(_ names: Name..., scope: Scope) {
+		reset(names, scope: scope)
 	}
 
 	/**
@@ -138,9 +161,9 @@ public enum KeyboardShortcuts {
 	}
 	```
 	*/
-	public static func reset(_ names: [Name]) {
+	public static func reset(_ names: [Name], scope: Scope) {
 		for name in names {
-			setShortcut(name.defaultShortcut, for: name)
+			setShortcut(name.defaultShortcut, for: name, scope: scope)
 		}
 	}
 
@@ -151,13 +174,13 @@ public enum KeyboardShortcuts {
 
 	You would usually not need this as the user would be the one setting the shortcut in a preferences user-interface, but it can be useful when, for example, migrating from a different keyboard shortcuts package.
 	*/
-	public static func setShortcut(_ shortcut: Shortcut?, for name: Name) {
+	public static func setShortcut(_ shortcut: Shortcut?, for name: Name, scope: Scope) {
 		guard let shortcut = shortcut else {
 			userDefaultsRemove(name: name)
 			return
 		}
 
-		userDefaultsSet(name: name, shortcut: shortcut)
+		userDefaultsSet(name: name, shortcut: shortcut, scope: scope)
 	}
 
 	/**
@@ -239,7 +262,7 @@ public enum KeyboardShortcuts {
 	}
 	```
 	*/
-	public static func onKeyDown(for name: Name, action: @escaping KeyAction) {
+	public static func onKeyDown(for name: Name, scope: Scope, action: @escaping KeyAction) {
 		if userDefaultsKeyDownHandlers[name] == nil {
 			userDefaultsKeyDownHandlers[name] = []
 		}
@@ -248,7 +271,7 @@ public enum KeyboardShortcuts {
 
 		// If the keyboard shortcut already exist, we register it.
 		if let shortcut = getShortcut(for: name) {
-			register(shortcut)
+			register(shortcut, scope: scope)
 		}
 	}
 
@@ -273,7 +296,7 @@ public enum KeyboardShortcuts {
 	}
 	```
 	*/
-	public static func onKeyUp(for name: Name, action: @escaping KeyAction) {
+	public static func onKeyUp(for name: Name, scope: Scope, action: @escaping KeyAction) {
 		if userDefaultsKeyUpHandlers[name] == nil {
 			userDefaultsKeyUpHandlers[name] = []
 		}
@@ -282,7 +305,7 @@ public enum KeyboardShortcuts {
 
 		// If the keyboard shortcut already exist, we register it.
 		if let shortcut = getShortcut(for: name) {
-			register(shortcut)
+			register(shortcut, scope: scope)
 		}
 	}
 
@@ -296,7 +319,7 @@ public enum KeyboardShortcuts {
 		NotificationCenter.default.post(name: .shortcutByNameDidChange, object: nil, userInfo: ["name": name])
 	}
 
-	static func userDefaultsSet(name: Name, shortcut: Shortcut) {
+	static func userDefaultsSet(name: Name, shortcut: Shortcut, scope: Scope) {
 		guard let encoded = try? JSONEncoder().encode(shortcut).string else {
 			return
 		}
@@ -305,7 +328,7 @@ public enum KeyboardShortcuts {
 			unregister(oldShortcut)
 		}
 
-		register(shortcut)
+		register(shortcut, scope: scope)
 		UserDefaults.standard.set(encoded, forKey: userDefaultsKey(for: name))
 		userDefaultsDidChange(name: name)
 	}

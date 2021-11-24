@@ -19,20 +19,22 @@ extension KeyboardShortcuts {
 
 		public let rawValue: String
 		public let defaultShortcut: Shortcut?
+		public let scope: Scope
 
 		/**
 		- Parameter name: Name of the shortcut.
 		- Parameter default: Optional default key combination. Do not set this unless it's essential. Users find it annoying when random apps steal their existing keyboard shortcuts. It's generally better to show a welcome screen on the first app launch that lets the user set the shortcut.
 		*/
-		public init(_ name: String, default defaultShortcut: Shortcut? = nil) {
+		public init(_ name: String, default defaultShortcut: Shortcut? = nil, scope: Scope = .global) {
 			self.rawValue = name
 			self.defaultShortcut = defaultShortcut
+			self.scope = scope
 
 			if
 				let defaultShortcut = defaultShortcut,
 				!userDefaultsContains(name: self)
 			{
-				setShortcut(defaultShortcut, for: self)
+				setShortcut(defaultShortcut, for: self, scope: scope)
 			}
 		}
 	}

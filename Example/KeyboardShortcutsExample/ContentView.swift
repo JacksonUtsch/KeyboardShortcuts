@@ -2,7 +2,7 @@ import SwiftUI
 import KeyboardShortcuts
 
 extension KeyboardShortcuts.Name {
-	static let testShortcut1 = Self("testShortcut1")
+	static let testShortcut1 = Self("testShortcut1", scope: .local)
 	static let testShortcut2 = Self("testShortcut2")
 	static let testShortcut3 = Self("testShortcut3")
 	static let testShortcut4 = Self("testShortcut4")
@@ -63,11 +63,11 @@ private struct DynamicShortcut: View {
 	private func onShortcutChange(oldValue: Shortcut, newValue: Shortcut) {
 		KeyboardShortcuts.disable(oldValue.name)
 
-		KeyboardShortcuts.onKeyDown(for: newValue.name) {
+		KeyboardShortcuts.onKeyDown(for: newValue.name, scope: .local) {
 			isPressed = true
 		}
 
-		KeyboardShortcuts.onKeyUp(for: newValue.name) {
+		KeyboardShortcuts.onKeyUp(for: newValue.name, scope: .local) {
 			isPressed = false
 		}
 	}
@@ -94,26 +94,26 @@ private struct DoubleShortcut: View {
 			Spacer()
 			Divider()
 			Button("Reset All") {
-				KeyboardShortcuts.reset(.testShortcut1, .testShortcut2)
+				KeyboardShortcuts.reset(.testShortcut1, .testShortcut2, scope: .local)
 			}
 		}
 			.frame(maxWidth: 300)
 			.padding()
 			.padding()
 			.onAppear {
-				KeyboardShortcuts.onKeyDown(for: .testShortcut1) {
+				KeyboardShortcuts.onKeyDown(for: .testShortcut1, scope: .local) {
 					isPressed1 = true
 				}
 
-				KeyboardShortcuts.onKeyUp(for: .testShortcut1) {
+				KeyboardShortcuts.onKeyUp(for: .testShortcut1, scope: .local) {
 					isPressed1 = false
 				}
 
-				KeyboardShortcuts.onKeyDown(for: .testShortcut2) {
+				KeyboardShortcuts.onKeyDown(for: .testShortcut2, scope: .local) {
 					isPressed2 = true
 				}
 
-				KeyboardShortcuts.onKeyUp(for: .testShortcut2) {
+				KeyboardShortcuts.onKeyUp(for: .testShortcut2, scope: .local) {
 					isPressed2 = false
 				}
 			}

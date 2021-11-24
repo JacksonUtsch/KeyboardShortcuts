@@ -262,7 +262,7 @@ extension KeyboardShortcuts {
 		}
 
 		private func saveShortcut(_ shortcut: Shortcut?) {
-			setShortcut(shortcut, for: shortcutName)
+			setShortcut(shortcut, for: shortcutName, scope: shortcutName.scope)
 			onChange?(shortcut)
 		}
 	}

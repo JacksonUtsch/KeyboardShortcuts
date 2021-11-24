@@ -9,6 +9,7 @@ struct AppMain: App {
 			ContentView()
 				.onAppear {
 					DispatchQueue.main.async {
+						print("ONAPPEAR")
 						state.createMenus()
 					}
 				}
