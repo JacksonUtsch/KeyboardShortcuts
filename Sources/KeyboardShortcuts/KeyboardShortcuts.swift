@@ -1,5 +1,42 @@
 import Cocoa
 
+public enum LocalKeyboardShortcuts {
+	private static var events: [AnyHashable: Any] = [:]
+
+	public static func register(
+		_ shortcut: KeyboardShortcuts.Shortcut,
+		onKeyDown: @escaping (KeyboardShortcuts.Shortcut) -> Void,
+		onKeyUp: @escaping (KeyboardShortcuts.Shortcut) -> Void
+	) {
+		events[shortcut.hashValue] = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+			if event.keyCode == shortcut.carbonKeyCode {
+				onKeyDown(shortcut)
+				return nil
+			}
+			return event
+		}
+
+		events[shortcut.hashValue/2] = NSEvent.addLocalMonitorForEvents(matching: .keyUp) { event in
+			if event.keyCode == shortcut.carbonKeyCode {
+				onKeyUp(shortcut)
+				return nil
+			}
+			return event
+		}
+	}
+
+	public static func unregister(
+		_ shortcut: KeyboardShortcuts.Shortcut
+	) {
+		events.removeValue(forKey: shortcut.hashValue)
+		events.removeValue(forKey: shortcut.hashValue/2)
+	}
+
+	public static func unregisterAll() {
+		events = [:]
+	}
+}
+
 /**
 Global keyboard shortcuts for your macOS app.
 */
@@ -38,21 +75,11 @@ public enum KeyboardShortcuts {
 				onKeyUp: handleOnKeyUp
 			)
 		case .local:
-			NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-				if event.keyCode == shortcut.carbonKeyCode {
-					handleOnKeyDown(shortcut)
-					return nil
-				}
-				return event
-			}
-
-			NSEvent.addLocalMonitorForEvents(matching: .keyUp) { event in
-				if event.keyCode == shortcut.carbonKeyCode {
-					handleOnKeyUp(shortcut)
-					return nil
-				}
-				return event
-			}
+			LocalKeyboardShortcuts.register(
+				shortcut,
+				onKeyDown: handleOnKeyDown,
+				onKeyUp: handleOnKeyUp
+			)
 		}
 
 		registeredShortcuts.insert(shortcut)
@@ -60,12 +87,14 @@ public enum KeyboardShortcuts {
 
 	private static func unregister(_ shortcut: Shortcut) {
 		CarbonKeyboardShortcuts.unregister(shortcut)
+		LocalKeyboardShortcuts.unregister(shortcut)
 		registeredShortcuts.remove(shortcut)
 	}
 
 	// TODO: Doc comment and make this public.
 	static func unregisterAll() {
 		CarbonKeyboardShortcuts.unregisterAll()
+		LocalKeyboardShortcuts.unregisterAll()
 		registeredShortcuts.removeAll()
 
 		// TODO: Should remove user defaults too.
@@ -78,6 +107,7 @@ public enum KeyboardShortcuts {
 	*/
 	public static func removeAllHandlers() {
 		CarbonKeyboardShortcuts.unregisterAll()
+		LocalKeyboardShortcuts.unregisterAll()
 		keyDownHandlers = [:]
 		keyUpHandlers = [:]
 		userDefaultsKeyDownHandlers = [:]
@@ -131,8 +161,8 @@ public enum KeyboardShortcuts {
 	}
 	```
 	*/
-	public static func reset(_ names: Name..., scope: Scope) {
-		reset(names, scope: scope)
+	public static func reset(_ names: Name...) {
+		reset(names)
 	}
 
 	/**
@@ -161,9 +191,9 @@ public enum KeyboardShortcuts {
 	}
 	```
 	*/
-	public static func reset(_ names: [Name], scope: Scope) {
+	public static func reset(_ names: [Name]) {
 		for name in names {
-			setShortcut(name.defaultShortcut, for: name, scope: scope)
+			setShortcut(name.defaultShortcut, for: name, scope: name.scope)
 		}
 	}
 
@@ -262,7 +292,7 @@ public enum KeyboardShortcuts {
 	}
 	```
 	*/
-	public static func onKeyDown(for name: Name, scope: Scope, action: @escaping KeyAction) {
+	public static func onKeyDown(for name: Name, action: @escaping KeyAction) {
 		if userDefaultsKeyDownHandlers[name] == nil {
 			userDefaultsKeyDownHandlers[name] = []
 		}
@@ -271,7 +301,7 @@ public enum KeyboardShortcuts {
 
 		// If the keyboard shortcut already exist, we register it.
 		if let shortcut = getShortcut(for: name) {
-			register(shortcut, scope: scope)
+			register(shortcut, scope: name.scope)
 		}
 	}
 
@@ -296,7 +326,7 @@ public enum KeyboardShortcuts {
 	}
 	```
 	*/
-	public static func onKeyUp(for name: Name, scope: Scope, action: @escaping KeyAction) {
+	public static func onKeyUp(for name: Name, action: @escaping KeyAction) {
 		if userDefaultsKeyUpHandlers[name] == nil {
 			userDefaultsKeyUpHandlers[name] = []
 		}
@@ -305,7 +335,7 @@ public enum KeyboardShortcuts {
 
 		// If the keyboard shortcut already exist, we register it.
 		if let shortcut = getShortcut(for: name) {
-			register(shortcut, scope: scope)
+			register(shortcut, scope: name.scope)
 		}
 	}
 

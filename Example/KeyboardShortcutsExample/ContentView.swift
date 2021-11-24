@@ -3,9 +3,9 @@ import KeyboardShortcuts
 
 extension KeyboardShortcuts.Name {
 	static let testShortcut1 = Self("testShortcut1", scope: .local)
-	static let testShortcut2 = Self("testShortcut2")
-	static let testShortcut3 = Self("testShortcut3")
-	static let testShortcut4 = Self("testShortcut4")
+	static let testShortcut2 = Self("testShortcut2", scope: .global)
+	static let testShortcut3 = Self("testShortcut3", scope: .local)
+	static let testShortcut4 = Self("testShortcut4", scope: .global)
 }
 
 private struct DynamicShortcutRecorder: View {
@@ -41,6 +41,7 @@ private struct DynamicShortcut: View {
 			Text("Dynamic Recorder")
 				.bold()
 				.padding(.bottom, 10)
+
 			VStack {
 				Picker("Select shortcut:", selection: $shortcut) {
 					ForEach(Self.shortcuts) {
@@ -63,11 +64,11 @@ private struct DynamicShortcut: View {
 	private func onShortcutChange(oldValue: Shortcut, newValue: Shortcut) {
 		KeyboardShortcuts.disable(oldValue.name)
 
-		KeyboardShortcuts.onKeyDown(for: newValue.name, scope: .local) {
+		KeyboardShortcuts.onKeyDown(for: newValue.name) {
 			isPressed = true
 		}
 
-		KeyboardShortcuts.onKeyUp(for: newValue.name, scope: .local) {
+		KeyboardShortcuts.onKeyUp(for: newValue.name) {
 			isPressed = false
 		}
 	}
@@ -94,26 +95,26 @@ private struct DoubleShortcut: View {
 			Spacer()
 			Divider()
 			Button("Reset All") {
-				KeyboardShortcuts.reset(.testShortcut1, .testShortcut2, scope: .local)
+				KeyboardShortcuts.reset(.testShortcut1, .testShortcut2)
 			}
 		}
 			.frame(maxWidth: 300)
 			.padding()
 			.padding()
 			.onAppear {
-				KeyboardShortcuts.onKeyDown(for: .testShortcut1, scope: .local) {
+				KeyboardShortcuts.onKeyDown(for: .testShortcut1) {
 					isPressed1 = true
 				}
 
-				KeyboardShortcuts.onKeyUp(for: .testShortcut1, scope: .local) {
+				KeyboardShortcuts.onKeyUp(for: .testShortcut1) {
 					isPressed1 = false
 				}
 
-				KeyboardShortcuts.onKeyDown(for: .testShortcut2, scope: .local) {
+				KeyboardShortcuts.onKeyDown(for: .testShortcut2) {
 					isPressed2 = true
 				}
 
-				KeyboardShortcuts.onKeyUp(for: .testShortcut2, scope: .local) {
+				KeyboardShortcuts.onKeyUp(for: .testShortcut2) {
 					isPressed2 = false
 				}
 			}
