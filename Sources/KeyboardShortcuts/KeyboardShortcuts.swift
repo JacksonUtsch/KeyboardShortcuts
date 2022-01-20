@@ -9,7 +9,7 @@ public enum LocalKeyboardShortcuts {
 		onKeyUp: @escaping (KeyboardShortcuts.Shortcut) -> Void
 	) {
 		events[shortcut.hashValue] = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-			if event.keyCode == shortcut.carbonKeyCode {
+			if event.keyCode == shortcut.carbonKeyCode && event.modifiers == shortcut.modifiers {
 				onKeyDown(shortcut)
 				return nil
 			}
@@ -17,7 +17,7 @@ public enum LocalKeyboardShortcuts {
 		}
 
 		events[shortcut.hashValue/2] = NSEvent.addLocalMonitorForEvents(matching: .keyUp) { event in
-			if event.keyCode == shortcut.carbonKeyCode {
+			if event.keyCode == shortcut.carbonKeyCode && event.modifiers == shortcut.modifiers {
 				onKeyUp(shortcut)
 				return nil
 			}
